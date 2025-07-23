@@ -1,3 +1,2 @@
 # small_formater
-an automative formater
-for the momment is only for linux,on a later phase it will be available on windows and mac os
+an automative formater with gui,it's under develop since 22/7/2025 and the installer is in the way
