@@ -71,216 +71,225 @@ public class SimpleInstaller extends JFrame {
                 ProcessBuilder pb;
                 Process process;
                 int exitCode,status_all=0;
-                try {
-                    // steps to build the application
-                    updateStatus("Preparing installation...");
-                    Thread.sleep(1000);
-                    updateStatus("The screen will flash,don't touch it");
-                    Thread.sleep(1000);
-                    updateStatus("If sudo password is required give it to install the requirements");
-                    Thread.sleep(1000);
-                    //checking qmake
+                if(os== "iOS"){
+                    updateStatus("iOs is not in the list yet");
+                }
+                else if(os=="Unknown")
+                {
+                    updateStatus("unknown system is not in the list yet");
+                }
+                else{
                     try {
-                        pb = new ProcessBuilder("qmake", "-v");
-                        process = pb.start();  // <-- IOException might happen here
-                        exitCode = process.waitFor();
-                        if (exitCode == 0) {
-                            updateStatus("qmake is installed.");
-                            status_all=1;
-                        } else {
-                            updateStatus("qmake is not installed.");
-                            try{
-                                int android_status=0;
-                                if(os == "Linux"){
-                                    pb = new ProcessBuilder("xterm", "-e", "sudo apt install qtbase5-dev qtcreator -y");
-                                }
-                                else if(os == "Windows"){
-                                    pb = new ProcessBuilder("powershell", "-Command", "Start-Process powershell -Verb runAs -ArgumentList 'winget install -e --id QtProject.QtCreator'");
-                                }
-                                else if(os == "MacOS"){
-                                    pb = new ProcessBuilder("osascript", "-e", "do shell script \"brew install --cask qt-creator\" with administrator privileges");
-                                }
-                                else if(os == "Android")
-                                {
-                                    android_status=1;
-                                    pb = new ProcessBuilder("su", "-c", "apt install qmake -y");  // Example inside Termux
-                                }
-                                process = pb.start();
-                                exitCode = process.waitFor();
-                                if(android_status == 1 && exitCode == 0){
-                                    updateStatus("installation finished");
-                                    status_all=1;
-                                }
-                                else if(android_status == 1 && exitCode != 0){
-                                    updateStatus("trying no root method");
-                                    pb = new ProcessBuilder("bash","-c","apt install qmake -y");
+                        // steps to build the application
+                        updateStatus("Preparing installation...");
+                        Thread.sleep(1000);
+                        updateStatus("The screen will flash,don't touch it");
+                        Thread.sleep(1000);
+                        updateStatus("If sudo password is required give it to install the requirements");
+                        Thread.sleep(1000);
+                        //checking qmake
+                        try {
+                            pb = new ProcessBuilder("qmake", "-v");
+                            process = pb.start();  // <-- IOException might happen here
+                            exitCode = process.waitFor();
+                            if (exitCode == 0) {
+                                updateStatus("qmake is installed.");
+                                status_all=1;
+                            } else {
+                                updateStatus("qmake is not installed.");
+                                try{
+                                    int android_status=0;
+                                    if(os == "Linux"){
+                                        pb = new ProcessBuilder("xterm", "-e", "sudo apt install qtbase5-dev qtcreator -y");
+                                    }
+                                    else if(os == "Windows"){
+                                        pb = new ProcessBuilder("powershell", "-Command", "Start-Process powershell -Verb runAs -ArgumentList 'winget install -e --id QtProject.QtCreator'");
+                                    }
+                                    else if(os == "MacOS"){
+                                        pb = new ProcessBuilder("osascript", "-e", "do shell script \"brew install --cask qt-creator\" with administrator privileges");
+                                    }
+                                    else if(os == "Android")
+                                    {
+                                        android_status=1;
+                                        pb = new ProcessBuilder("su", "-c", "apt install qmake -y");  // Example inside Termux
+                                    }
                                     process = pb.start();
                                     exitCode = process.waitFor();
-                                    if(exitCode == 0){
+                                    if(android_status == 1 && exitCode == 0){
                                         updateStatus("installation finished");
                                         status_all=1;
                                     }
-                                    else{
+                                    else if(android_status == 1 && exitCode != 0){
+                                        updateStatus("trying no root method");
+                                        pb = new ProcessBuilder("bash","-c","apt install qmake -y");
+                                        process = pb.start();
+                                        exitCode = process.waitFor();
+                                        if(exitCode == 0){
+                                            updateStatus("installation finished");
+                                            status_all=1;
+                                        }
+                                        else{
+                                            updateStatus("installation failed");
+                                        }
+                                    }
+                                    else if(android_status == 0 && exitCode == 0)
+                                    {
+                                        updateStatus("installation finished");
+                                        status_all=1;
+                                    }
+                                    else if(android_status == 0 && exitCode != 0){
                                         updateStatus("installation failed");
                                     }
                                 }
-                                else if(android_status == 0 && exitCode == 0)
-                                {
-                                    updateStatus("installation finished");
-                                    status_all=1;
-                                }
-                                else if(android_status == 0 && exitCode != 0){
-                                    updateStatus("installation failed");
+                                catch (IOException | InterruptedException ex) {
+                                    updateStatus("Error installing qmake: " + ex.getMessage());
                                 }
                             }
-                            catch (IOException | InterruptedException ex) {
-                                updateStatus("Error installing qmake: " + ex.getMessage());
+                        } catch (IOException | InterruptedException ex) {
+                            updateStatus("Error checking qmake: " + ex.getMessage());
+                        }
+                        // checking g++
+                        try{
+                            pb = new ProcessBuilder("g++", "-v");
+                            process = pb.start();
+                            exitCode = process.waitFor();
+                            int android_status=0;
+                            if(exitCode == 0){
+                                updateStatus("g++ is already installed");
+                                status_all=2;
                             }
-                        }
-                    } catch (IOException | InterruptedException ex) {
-                        updateStatus("Error checking qmake: " + ex.getMessage());
-                    }
-                    // checking g++
-                    try{
-                        pb = new ProcessBuilder("g++", "-v");
-                        process = pb.start();
-                        exitCode = process.waitFor();
-                        int android_status=0;
-                        if(exitCode == 0){
-                            updateStatus("g++ is already installed");
-                            status_all=2;
-                        }
-                        else{
-                            updateStatus("g++ needs to be installed");
-                            try{
-                                if(os == "Linux"){
-                                    pb = new ProcessBuilder("xterm", "-e", "sudo apt install g++ -y");
-                                }
-                                else if(os == "Windows"){
-                                    pb = new ProcessBuilder("powershell", "-Command", "Start-Process powershell -Verb runAs -ArgumentList 'winget install -e --id MinGW.Mingw'");
-                                }
-                                else if(os == "MacOS"){
-                                    pb = new ProcessBuilder("bash", "-c", "xcode-select --install");
-                                }
-                                else if(os == "Android"){
-                                    android_status=1;
-                                    pb = new ProcessBuilder("su", "-c", "apt install clang");
-                                }
-                                process = pb.start();
-                                exitCode = process.waitFor();
-                                if(android_status == 1 && exitCode == 0){
-                                    updateStatus("installation finished");
-                                    status_all=2;
-                                }
-                                else if(android_status == 1 && exitCode != 0){
-                                    updateStatus("trying no root method");
-                                    pb = new ProcessBuilder("bash","-c","apt install clang -y");
+                            else{
+                                updateStatus("g++ needs to be installed");
+                                try{
+                                    if(os == "Linux"){
+                                        pb = new ProcessBuilder("xterm", "-e", "sudo apt install g++ -y");
+                                    }
+                                    else if(os == "Windows"){
+                                        pb = new ProcessBuilder("powershell", "-Command", "Start-Process powershell -Verb runAs -ArgumentList 'winget install -e --id MinGW.Mingw'");
+                                    }
+                                    else if(os == "MacOS"){
+                                        pb = new ProcessBuilder("bash", "-c", "xcode-select --install");
+                                    }
+                                    else if(os == "Android"){
+                                        android_status=1;
+                                        pb = new ProcessBuilder("su", "-c", "apt install clang");
+                                    }
                                     process = pb.start();
                                     exitCode = process.waitFor();
-                                    if(exitCode == 0){
+                                    if(android_status == 1 && exitCode == 0){
                                         updateStatus("installation finished");
                                         status_all=2;
                                     }
+                                    else if(android_status == 1 && exitCode != 0){
+                                        updateStatus("trying no root method");
+                                        pb = new ProcessBuilder("bash","-c","apt install clang -y");
+                                        process = pb.start();
+                                        exitCode = process.waitFor();
+                                        if(exitCode == 0){
+                                            updateStatus("installation finished");
+                                            status_all=2;
+                                        }
+                                        else{
+                                            updateStatus("installation failed");
+                                        }
+                                    }
+                                    else if(android_status == 0 && exitCode == 0){
+                                        updateStatus("g++ installation finished");
+                                        status_all=2;
+                                    }
                                     else{
-                                        updateStatus("installation failed");
+                                        updateStatus("g++ installation failed");
                                     }
                                 }
-                                else if(android_status == 0 && exitCode == 0){
-                                    updateStatus("g++ installation finished");
-                                    status_all=2;
-                                }
-                                else{
-                                    updateStatus("g++ installation failed");
+                                catch (IOException | InterruptedException ex) {
+                                    updateStatus("Error installing g++: " + ex.getMessage());
                                 }
                             }
-                            catch (IOException | InterruptedException ex) {
-                                updateStatus("Error installing g++: " + ex.getMessage());
-                            }
                         }
-                    }
-                    catch (IOException | InterruptedException ex) {
-                        updateStatus("Error checking g++: " + ex.getMessage());
-                    }
-                    // trying to execute qmake to beuild the application
-                    try{
-                        updateStatus("bulding application");
-                        exitCode=0;
-                        if(os == "Linux"){
-                            pb = new ProcessBuilder("xterm", "-e", "qmake format_ext4_or_fat32.pro");
-                            process = pb.start();
-                            exitCode = process.waitFor();
+                        catch (IOException | InterruptedException ex) {
+                            updateStatus("Error checking g++: " + ex.getMessage());
                         }
-                        else if(os == "Windows"){
-                            pb = new ProcessBuilder("powershell", "-Command", "Start-Process powershell -Verb runAs -ArgumentList 'qmake format_ext4_or_fat32.pro'");
-                            process = pb.start();
-                            exitCode = process.waitFor();
-                        }
-                        else if(os == "MacOS"){
-                            pb = new ProcessBuilder("osascript", "-e", "tell application \"Terminal\" to do script \"qmake format_ext4_or_fat32.pro\"");
-                            process = pb.start();
-                            exitCode = process.waitFor();
-                        }
-                        else if(os == "Android"){
-                            pb = new ProcessBuilder("bash", "-c", "qmake format_ext4_or_fat32.pro");
-                            process = pb.start();
-                            exitCode = process.waitFor();
-                        }
-                        if(exitCode == 0){
-                            // making the application, finalizing the building
-                            updateStatus("finished building application");
-                            status_all=3;
-                        }
-                        else{
-                            updateStatus("failed to build application");
-                        }
-                    }
-                    catch (IOException | InterruptedException ex) {
-                        updateStatus("Error building the application: " + ex.getMessage());
-                    }
-                    updateStatus("Finalizing...");
-                    if(status_all==3){
+                        // trying to execute qmake to beuild the application
                         try{
+                            updateStatus("bulding application");
                             exitCode=0;
                             if(os == "Linux"){
-                                pb = new ProcessBuilder("xterm", "-e", "make");
+                                pb = new ProcessBuilder("xterm", "-e", "qmake format_ext4_or_fat32.pro");
                                 process = pb.start();
                                 exitCode = process.waitFor();
                             }
                             else if(os == "Windows"){
-                                pb = new ProcessBuilder("cmd", "/c", "mingw32-make");
+                                pb = new ProcessBuilder("powershell", "-Command", "Start-Process powershell -Verb runAs -ArgumentList 'qmake format_ext4_or_fat32.pro'");
                                 process = pb.start();
                                 exitCode = process.waitFor();
                             }
-                            else if(os ==  "MacOS"){
-                                pb = new ProcessBuilder("bash", "-c", "make");
+                            else if(os == "MacOS"){
+                                pb = new ProcessBuilder("osascript", "-e", "tell application \"Terminal\" to do script \"qmake format_ext4_or_fat32.pro\"");
                                 process = pb.start();
                                 exitCode = process.waitFor();
                             }
                             else if(os == "Android"){
-                                pb = new ProcessBuilder("bash", "-c", "make");
+                                pb = new ProcessBuilder("bash", "-c", "qmake format_ext4_or_fat32.pro");
                                 process = pb.start();
                                 exitCode = process.waitFor();
                             }
-                            if(exitCode==0){
-                                status_all=4;
+                            if(exitCode == 0){
+                                // making the application, finalizing the building
+                                updateStatus("finished building application");
+                                status_all=3;
+                            }
+                            else{
+                                updateStatus("failed to build application");
                             }
                         }
                         catch (IOException | InterruptedException ex) {
                             updateStatus("Error building the application: " + ex.getMessage());
                         }
-                        if(status_all==4){
-                            Thread.sleep(1000);  // Simulate time delay for the step
-                            updateStatus("Installation completed successfully!");  // Done message
+                        updateStatus("Finalizing...");
+                        if(status_all==3){
+                            try{
+                                exitCode=0;
+                                if(os == "Linux"){
+                                    pb = new ProcessBuilder("xterm", "-e", "make");
+                                    process = pb.start();
+                                    exitCode = process.waitFor();
+                                }
+                                else if(os == "Windows"){
+                                    pb = new ProcessBuilder("cmd", "/c", "mingw32-make");
+                                    process = pb.start();
+                                    exitCode = process.waitFor();
+                                }
+                                else if(os ==  "MacOS"){
+                                    pb = new ProcessBuilder("bash", "-c", "make");
+                                    process = pb.start();
+                                    exitCode = process.waitFor();
+                                }
+                                else if(os == "Android"){
+                                    pb = new ProcessBuilder("bash", "-c", "make");
+                                    process = pb.start();
+                                    exitCode = process.waitFor();
+                                }
+                                if(exitCode==0){
+                                    status_all=4;
+                                }
+                            }
+                            catch (IOException | InterruptedException ex) {
+                                updateStatus("Error building the application: " + ex.getMessage());
+                            }
+                            if(status_all==4){
+                                Thread.sleep(1000);  // Simulate time delay for the step
+                                updateStatus("Installation completed successfully!");  // Done message
+                            }
+                            else{
+                                updateStatus("Installation failed");
+                            }
                         }
-                        else{
-                            updateStatus("Installation failed");
-                        }
+                    } catch (InterruptedException ex) {
+                        updateStatus("Installation interrupted.");  // Handle thread interruption
+                    } finally {
+                        // Re-enable the button on the Swing event thread
+                        SwingUtilities.invokeLater(() -> installButton.setEnabled(true));
                     }
-                } catch (InterruptedException ex) {
-                    updateStatus("Installation interrupted.");  // Handle thread interruption
-                } finally {
-                    // Re-enable the button on the Swing event thread
-                    SwingUtilities.invokeLater(() -> installButton.setEnabled(true));
                 }
             }).start();
         }
