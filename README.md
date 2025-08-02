@@ -1,3 +1,4 @@
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 # SimpleInstaller
 
 **SimpleInstaller** is a cross-platform Java GUI application that automatically checks for and installs the required dependencies (`qmake`, `g++`) to build a Qt-based C++ project: **`format_ext4_or_fat32`**.
